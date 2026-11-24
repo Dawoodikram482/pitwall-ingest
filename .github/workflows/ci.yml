@@ -124,3 +124,6 @@ jobs:
 
       - name: Check the container runs as a non-root user
         run: test "$(docker exec app id -u)" != "0"
+
+      - name: Check the migrations are in the image
+        run: docker exec app alembic history | grep -q "0001"
