@@ -29,3 +29,11 @@ updates:
       day: monday
     commit-message:
       prefix: "chore(docker)"
+
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: "chore(docker)"
