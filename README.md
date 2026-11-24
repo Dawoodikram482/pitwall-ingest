@@ -1,11 +1,11 @@
 # pitwall-ingest
 
-[![CI](https://github.com/__GITHUB_OWNER__/pitwall-ingest/actions/workflows/ci.yml/badge.svg)](https://github.com/__GITHUB_OWNER__/pitwall-ingest/actions/workflows/ci.yml)
+[![CI](https://github.com/Dawoodikram482/pitwall-ingest/actions/workflows/ci.yml/badge.svg)](https://github.com/Dawoodikram482/pitwall-ingest/actions/workflows/ci.yml)
 ![Python 3.12](https://img.shields.io/badge/python-3.12-blue)
 ![mypy strict](https://img.shields.io/badge/mypy-strict-blue)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-The ingestion service of [Pit Wall](https://github.com/__GITHUB_OWNER__/agent-avenger), an AI race
+The ingestion service of [Pit Wall](https://github.com/Dawoodikram482/agent-avenger), an AI race
 strategist for Formula 1. It loads session data (laps, stints, pit stops, weather, race
 control, results) from the free [OpenF1](https://openf1.org) API into Postgres, where the
 rest of Pit Wall reads it.
@@ -45,6 +45,18 @@ docker build -t pitwall-ingest .
 docker run --rm -p 8000:8000 pitwall-ingest
 ```
 
+## Notebooks
+
+Spikes and data exploration live in `notebooks/`. Their packages are in a separate group,
+so the service and CI do not install them:
+
+```bash
+uv sync --group notebook
+uv run poe notebook      # opens Jupyter Lab; or open the .ipynb in VS Code
+```
+
+Outputs are stripped on every commit by the nbstripout pre-commit hook.
+
 ## Tasks
 
 Run `uv run poe` to list them.
@@ -59,6 +71,7 @@ Run `uv run poe` to list them.
 | `uv run poe run` | Start the service |
 | `uv run poe dev` | Start with auto-reload |
 | `uv run poe hooks` | Install the pre-commit hooks |
+| `uv run poe notebook` | Open the notebooks in Jupyter Lab |
 
 ## Project layout
 
@@ -70,6 +83,7 @@ src/pitwall_ingest/
 ├── adapters/    Implementations of ports: databases, HTTP clients, clocks
 └── __main__.py  Entry point: python -m pitwall_ingest
 tests/           Unit and API tests
+notebooks/       Spikes and data exploration (outputs stripped)
 docs/adr/        Architecture decision records
 ```
 
@@ -89,6 +103,8 @@ Copy `.env.example` to `.env` and adjust. `.env` is git-ignored.
 
 - [ADR 1: Record architecture decisions](docs/adr/0001-record-architecture-decisions.md)
 - [ADR 2: Use poethepoet as the task runner](docs/adr/0002-poethepoet-task-runner.md)
+- [ADR 3: OpenF1 is the source of session data; Jolpica for the calendar; no FastF1](docs/adr/0003-openf1-is-the-session-data-source.md)
+- [ADR 4: Store lap-level data; reduce time series to one value per lap](docs/adr/0004-store-lap-level-data.md)
 
 ## License
 
