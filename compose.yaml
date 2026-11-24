@@ -1,0 +1,25 @@
+# Local Postgres for development: docker compose up -d db
+# The service itself runs with `uv run poe dev`; it is not containerised here.
+name: pitwall
+
+services:
+  db:
+    # Same major version as CI and the hosted database. Dependabot bumps the tag.
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-pitwall}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pitwall}
+      POSTGRES_DB: ${POSTGRES_DB:-pitwall}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  pgdata:

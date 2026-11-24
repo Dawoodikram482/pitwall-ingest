@@ -1,6 +1,6 @@
 [project]
 name = "pitwall-ingest"
-version = "0.1.0"
+version = "0.2.0"
 description = "Pit Wall: loads F1 session data from OpenF1 into Postgres"
 readme = "README.md"
 license = "MIT"
@@ -9,7 +9,11 @@ authors = [{ name = "Dawoodikram482" }]
 keywords = ["formula-1", "f1", "openf1", "data-ingestion", "postgres", "python", "uv"]
 requires-python = ">=3.12"
 dependencies = [
+    "alembic>=1.20.1",
     "fastapi>=0.143.0",
+    "psycopg[binary]>=3.3.9",
+    "pydantic-settings>=2.16.3",
+    "sqlalchemy>=2.1.9",
     "uvicorn[standard]>=0.54.0",
 ]
 
@@ -50,6 +54,10 @@ check = { sequence = ["lint", "typecheck", "test"], help = "Everything CI runs" 
 run = { cmd = "python -m pitwall_ingest", help = "Start the service" }
 dev = { cmd = "uvicorn pitwall_ingest.api.app:create_app --factory --reload", help = "Start with auto-reload" }
 hooks = { cmd = "pre-commit install", help = "Install the git pre-commit hooks" }
+db-up = { cmd = "docker compose up -d --wait db", help = "Start the local Postgres and wait until it is healthy" }
+db-down = { cmd = "docker compose down", help = "Stop the local Postgres (data is kept in the volume)" }
+migrate = { cmd = "alembic upgrade head", help = "Apply all database migrations" }
+migration = { cmd = "alembic revision --autogenerate -m", help = "Create a migration from model changes: poe migration \"add x\"" }
 notebook = { cmd = "jupyter lab notebooks", help = "Open the notebooks (needs: uv sync --group notebook)" }
 
 # ---------------------------------------------------------------------------
@@ -101,7 +109,7 @@ line-ending = "lf"
 [tool.mypy]
 strict = true
 python_version = "3.12"
-files = ["src", "tests"]
+files = ["src", "tests", "migrations"]
 plugins = ["pydantic.mypy"]
 warn_unreachable = true
 
@@ -112,6 +120,7 @@ warn_unreachable = true
 testpaths = ["tests"]
 addopts = ["-ra", "--strict-markers", "--strict-config", "--cov", "--cov-report=term-missing"]
 xfail_strict = true
+markers = ["postgres: needs a real Postgres (set TEST_DATABASE_URL); skipped otherwise"]
 
 [tool.coverage.run]
 source = ["pitwall_ingest"]

@@ -1,8 +1,10 @@
-# Only pyproject.toml, uv.lock, README.md, LICENSE and src/ are needed in the image
+# Allow-list: only what the image needs. Add new paths here when the Dockerfile COPYs them.
 *
 !pyproject.toml
 !uv.lock
 !README.md
 !LICENSE
 !src/
+!alembic.ini
+!migrations/
 **/__pycache__

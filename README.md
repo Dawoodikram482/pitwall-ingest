@@ -15,7 +15,8 @@ rest of Pit Wall reads it.
 | Story | What | State |
 | --- | --- | --- |
 | PW-4 | Data spike: what OpenF1 really returns, request budget, source decision, draft schema | Done: [findings](docs/spike-openf1.md) |
-| PW-5 onwards | OpenF1 client, Postgres schema, idempotent loader, quality checks | Next |
+| PW-5 | Database schema: SQLAlchemy models, Alembic migrations, local Postgres, CI checks | Done |
+| PW-6, PW-7 | OpenF1 client, idempotent loader, data-quality checks | Next |
 
 ## Data sources
 
@@ -45,6 +46,33 @@ docker build -t pitwall-ingest .
 docker run --rm -p 8000:8000 pitwall-ingest
 ```
 
+## Database
+
+Postgres 16. The tables follow the spike's schema ([section 6](docs/spike-openf1.md#6-draft-schema)):
+`meetings`, `sessions`, `session_drivers`, `laps`, `stints`, `pit_stops`, `race_control`,
+`safety_car_periods`, `weather`, `session_results`, `starting_grid` and `ingestion_runs`.
+Primary keys are OpenF1's natural keys, so reloading a session updates rows instead of
+duplicating them.
+
+```bash
+cp .env.example .env          # DATABASE_URL already points at the compose database
+uv run poe db-up              # Postgres in Docker, waits until healthy
+uv run poe migrate            # alembic upgrade head
+```
+
+Changing the schema: edit `src/pitwall_ingest/adapters/db/models.py`, then
+`uv run poe migration "what changed"`, review the generated file in `migrations/versions/`,
+and run `uv run poe migrate`. CI fails if the models and migrations differ ([ADR 5](docs/adr/0005-sqlalchemy-and-alembic.md)).
+
+The migration tests need an **empty throwaway** database, because every test wipes it:
+
+```bash
+docker compose exec db createdb -U pitwall pitwall_test
+TEST_DATABASE_URL=postgresql+psycopg://pitwall:pitwall@localhost:5432/pitwall_test uv run pytest -m postgres
+```
+
+Without `TEST_DATABASE_URL` those tests are skipped, so `uv run poe check` works without Docker.
+
 ## Notebooks
 
 Spikes and data exploration live in `notebooks/`. Their packages are in a separate group,
@@ -71,6 +99,9 @@ Run `uv run poe` to list them.
 | `uv run poe run` | Start the service |
 | `uv run poe dev` | Start with auto-reload |
 | `uv run poe hooks` | Install the pre-commit hooks |
+| `uv run poe db-up` / `db-down` | Start or stop the local Postgres |
+| `uv run poe migrate` | Apply all migrations |
+| `uv run poe migration "msg"` | Generate a migration from model changes |
 | `uv run poe notebook` | Open the notebooks in Jupyter Lab |
 
 ## Project layout
@@ -84,6 +115,8 @@ src/pitwall_ingest/
 └── __main__.py  Entry point: python -m pitwall_ingest
 tests/           Unit and API tests
 notebooks/       Spikes and data exploration (outputs stripped)
+migrations/      Alembic migrations (versions/0001_initial_schema.py, ...)
+compose.yaml     Local Postgres
 docs/adr/        Architecture decision records
 ```
 
@@ -105,6 +138,7 @@ Copy `.env.example` to `.env` and adjust. `.env` is git-ignored.
 - [ADR 2: Use poethepoet as the task runner](docs/adr/0002-poethepoet-task-runner.md)
 - [ADR 3: OpenF1 is the source of session data; Jolpica for the calendar; no FastF1](docs/adr/0003-openf1-is-the-session-data-source.md)
 - [ADR 4: Store lap-level data; reduce time series to one value per lap](docs/adr/0004-store-lap-level-data.md)
+- [ADR 5: SQLAlchemy 2.0 models and Alembic migrations, checked in CI](docs/adr/0005-sqlalchemy-and-alembic.md)
 
 ## License
 

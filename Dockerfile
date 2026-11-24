@@ -35,7 +35,12 @@ FROM ${PYTHON_IMAGE} AS runtime
 
 RUN groupadd --system app && useradd --system --gid app --no-create-home app
 
+WORKDIR /app
+
 COPY --from=builder --chown=app:app /app/.venv /app/.venv
+# Migrations ship with the image so a deploy can run `alembic upgrade head` before starting.
+COPY --chown=app:app alembic.ini ./
+COPY --chown=app:app migrations ./migrations
 
 ENV PATH="/app/.venv/bin:${PATH}" \
     PYTHONUNBUFFERED=1 \
@@ -43,7 +48,6 @@ ENV PATH="/app/.venv/bin:${PATH}" \
     HOST=0.0.0.0 \
     PORT=8000
 
-WORKDIR /app
 USER app
 EXPOSE 8000
 
